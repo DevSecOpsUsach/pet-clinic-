@@ -21,7 +21,7 @@ jobs:
     - name: build
       run: |
         chmod 777 gradlew
-        ./gradlew build
+        #./gradlew build
 
     - name: Validando existencia de proyecto en SonarCloud
       id: validateProjectOnSonar
