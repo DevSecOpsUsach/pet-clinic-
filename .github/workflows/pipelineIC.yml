@@ -72,4 +72,5 @@ jobs:
         idanalisis=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/ce/component?component=${{ github.event.repository.name }}')
         idanalisisParse=$(echo "$idanalisis" | jq .current.analysisId | sed -e 's/^"//' -e 's/"$//')
         echo "ID del análisis: $idanalisisParse"
+        qualitygate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/web_api/api/qualitygates/project_status?analysisId=$idanalisisParse')
         
