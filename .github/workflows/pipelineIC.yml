@@ -57,3 +57,12 @@ jobs:
           echo "build.gradle no encontrado. Asegúrate de que el proyecto sea un proyecto Java con Gradle."
           exit 1
         fi
+    
+    - name: Ejecutando SonarCloud
+      run: |
+        ./gradlew sonarqube \
+          -Dsonar.projectKey=${{ github.event.repository.name }} \
+          -Dsonar.organization=devsecopsusach \
+          -Dsonar.host.url=https://sonarcloud.io \
+          -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
+          -Dsonar.branch.name=main
