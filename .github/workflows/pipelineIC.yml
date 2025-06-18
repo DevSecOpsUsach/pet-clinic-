@@ -69,4 +69,7 @@ jobs:
 
     - name: Validando resultado de SonarCloud
       run: |
-        curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/ce/component?component=${{ github.event.repository.name }}'
+        idanalisis=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/ce/component?component=${{ github.event.repository.name }}')
+        idanalisisParse=$(echo "$idanalisis" | jq .current.analysisId | sed -e 's/^"//' -e 's/"$//')
+        echo "ID del análisis: $idanalisisParse"
+        
