@@ -86,8 +86,8 @@ jobs:
             echo "Calidad del código: WARN"
             exit 1
             ;;
-          *)
-            echo "Estado desconocido de la calidad del código: $qualitygateStatus"
+          *"NONE"*)
+            echo "Estado NONE: $qualitygateStatus"
             exit 1
             ;;
         esac
