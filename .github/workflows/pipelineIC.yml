@@ -40,4 +40,20 @@ jobs:
           curl -X POST -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/project_branches/rename' -d 'name=main' -d 'project=${{ github.event.repository.name }}'
         fi
         set -e
-      
+    
+    - name: Validando tipo de proyecto
+      run: | 
+        if [ -f "build.gradle" ]
+        then
+          if grep -q 'id "org.sonarqube" version "3.3"' build.gradle
+          then
+            echo "El plugin de SonarCloud ya está presente en build.gradle"
+          else
+            sed -i '/id '\''java'\''/a \ \ \ \ id '\''org.sonarqube'\'' version '\''3.3'\''' build.gradle
+            echo "Plugin de SonarCloud agregado a build.gradle"
+            cat build.gradle
+          fi
+        else
+          echo "build.gradle no encontrado. Asegúrate de que el proyecto sea un proyecto Java con Gradle."
+          exit 1
+        fi
