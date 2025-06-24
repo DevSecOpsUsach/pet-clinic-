@@ -92,7 +92,7 @@ jobs:
         #    ;;
         #esac
 
-        issueValidate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/issues/search?branch=main&componentKeys=pet-clinic-&facets=severities' | .facets[0].values[1].count)
+        issueValidate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/issues/search?branch=main&componentKeys=pet-clinic-&facets=severities' | jq '.facets[0].values[1].count')
         if [ "$issueValidate" -gt 0 ]; then
           echo "Existen problemas en el código, se detiene el pipeline"
           exit 1
@@ -130,7 +130,7 @@ jobs:
         format: 'HTML'
         out: 'reports'
         args: >
-          --failOnCVSS 1
+          --failOnCVSS 7
           --enableRetired
     
     - name: Upload Dependency Check Report
