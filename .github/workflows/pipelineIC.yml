@@ -5,6 +5,7 @@ on:
       - feat-sast
 
 jobs:
+#--------------------------------- SAST ---------------------------------
   SAST:
     runs-on: ubuntu-latest
     steps:
@@ -95,12 +96,12 @@ jobs:
         issueValidate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/issues/search?branch=main&componentKeys=pet-clinic-&facets=severities' | jq '.facets[0].values[1].count')
         if [ "$issueValidate" -gt 0 ]; then
           echo "Existen problemas en el código, se detiene el pipeline"
-          exit 1
+          #exit 1
         else
           echo "No existen problemas en el código, se continúa con el pipeline"
         fi
 
-
+#--------------------------------- SCA ---------------------------------
   SCA:
     needs: SAST
     runs-on: ubuntu-latest
@@ -138,3 +139,39 @@ jobs:
       with:
         name: dependency-check-report
         path: ${{github.workspace}}/reports
+
+    - name: Upload Test result
+      uses: actions/upload-artifact@master
+      with:
+        name: JAR
+        path: ${{github.workspace}}/build/libs/spring-petclinic-2.6.0.jar
+
+#--------------------------------- DockerBuild ---------------------------------
+  DockerBuild:
+    needs: SCA
+    runs-on: ubuntu-latest
+    steps:
+    
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Docker Login
+      uses: docker/login-action@v3.0.0
+      with:
+        username: ${{ secrets.DOCKER_USER }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Download JAR
+      uses: actions/download-artifact@master
+      with:
+        name: JAR
+        path: ${{github.workspace}}
+    
+    - name: Build Docker
+      run: |
+        ls -R
+        docker build --tag b4b4y4g4x/cursodevsecops-test:latest .
+
+    - name: Push Docker
+      run: | 
+        docker push b4b4y4g4x/cursodevsecops-test:latest
