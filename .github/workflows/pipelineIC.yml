@@ -70,33 +70,11 @@ jobs:
 
     - name: Validando resultado de SonarCloud
       run: |
-        #idanalisis=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/ce/component?component=${{ github.event.repository.name }}')
-        #idanalisisParse=$(echo "$idanalisis" | jq .current.analysisId | sed -e 's/^"//' -e 's/"$//')
-        #echo "ID del análisis: $idanalisisParse"
-        #qualitygate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/qualitygates/project_status?analysisId=$idanalisisParse')
-        #qualitygateStatus=$(echo "$qualitygate" | jq .projectStatus.status | sed -e 's/^"//' -e 's/"$//')
-        #case $qualitygateStatus in
-        #  *"OK"*)
-        #    echo "Calidad del código: OK"
-        #    ;;
-        #  *"ERROR"*)
-        #    echo "Calidad del código: ERROR"
-        #    exit 1
-        #    ;;
-        #  *"WARN"*)
-        #    echo "Calidad del código: WARN"
-        #    exit 1
-        #    ;;
-        #  *"NONE"*)
-        #    echo "Estado NONE: $qualitygateStatus"
-        #    exit 1
-        #    ;;
-        #esac
 
         issueValidate=$(curl -s -X GET -u '${{ secrets.SONAR_TOKEN }}:' 'https://sonarcloud.io/api/issues/search?branch=main&componentKeys=pet-clinic-&facets=severities' | jq '.facets[0].values[1].count')
         if [ "$issueValidate" -gt 0 ]; then
           echo "Existen problemas en el código, se detiene el pipeline"
-          #exit 1
+          exit 1
         else
           echo "No existen problemas en el código, se continúa con el pipeline"
         fi
@@ -146,82 +124,3 @@ jobs:
         name: JAR
         path: ${{github.workspace}}/build/libs/spring-petclinic-2.6.0.jar
 
-#--------------------------------- DockerBuild ---------------------------------
-  DockerBuild:
-    needs: SCA
-    runs-on: ubuntu-latest
-    steps:
-    
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Docker Login
-      uses: docker/login-action@v3.0.0
-      with:
-        username: ${{ secrets.DOCKER_USER }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Download JAR
-      uses: actions/download-artifact@master
-      with:
-        name: JAR
-        path: ${{github.workspace}}
-    
-    - name: Build Docker
-      run: |
-        ls -R
-        docker build --tag b4b4y4g4x/cursodevsecops-test:latest .
-
-    - name: Push Docker
-      run: | 
-        docker push b4b4y4g4x/cursodevsecops-test:latest
-
-
-# ------------------ Docker Scan ------------------------------------
-
-  DockerScan:
-    needs: DockerBuild
-    runs-on: ubuntu-latest
-    steps:
-    
-    - name: Docker Login
-      uses: docker/login-action@v3.0.0
-      with:
-        username: ${{ secrets.DOCKER_USER }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-
-    - name: Pull de la Imagen Docker
-      run: |
-        docker pull b4b4y4g4x/cursodevsecops-test:latest
-    
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'b4b4y4g4x/cursodevsecops-test:latest'
-        format: 'table'
-    
-    - name: Push Docker
-      run: | 
-        docker push b4b4y4g4x/cursodevsecops-test:latest
-
-#--------------------------------- DAST ---------------------------------
-  DAST:
-    needs: DockerScan
-    runs-on: self-hosted
-    steps:
-   
-    - name: Despliegue Aplicaion
-      run: |
-        docker run -p 8085:8085 --name pet-clinic-deploy -d b4b4y4g4x/cursodevsecops-test:latest
-    - name: Sleep
-      run: | 
-        sleep 30
-    - name: OWASP ZAP Scan
-      uses: zaproxy/action-baseline@v0.11.0
-      with:
-        target: 'http://localhost:8085/'
-   
-    - name: OWASP ZAP Scan
-      run: |
-        docker pull owasp/zap2docker-stable
-        docker run --rm -v ${PWD}:/zap/wrk/:rw -t owasp/zap2docker-stable & zap-baseline.py -t http://localhost:8085 -r DAST.html
